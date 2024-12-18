@@ -2,8 +2,8 @@ import 'package:direct_caller_sim_choice/direct_caller_sim_choice.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:permission_handler/permission_handler.dart';
-import 'models/contactList class.dart';
-import 'add_page.dart';  // Import the AddPage where contacts can be added
+import 'add_page.dart';
+import 'models/contactList class.dart';  // Import the AddPage where contacts can be added
 
 class ListPage extends StatefulWidget {
   final List<contactList> contactListData;
@@ -45,7 +45,7 @@ class _ListPageState extends State<ListPage> {
         elevation: 5,
         actions: [
           IconButton(
-            icon: const Icon(Icons.date_range, color: Colors.white,),
+            icon: const Icon(Icons.date_range, color: Colors.white),
             onPressed: () async {
               final DateTime? pickedDate = await showDatePicker(
                 context: context,
@@ -109,7 +109,11 @@ class _ListPageState extends State<ListPage> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    CallButton(contactNumber: contact.contactNumber),
+                    CallButton(
+                      contactNumber: contact.contactNumber,
+                      personName: contact.personName,
+                      productName: contact.productName,
+                    ),
                     IconButton(
                       onPressed: () {
                         _deleteContact(index);
@@ -227,8 +231,15 @@ class _ListPageState extends State<ListPage> {
 
 class CallButton extends StatefulWidget {
   final String contactNumber;
+  final String personName;
+  final String productName;
 
-  const CallButton({super.key, required this.contactNumber});
+  const CallButton({
+    super.key,
+    required this.contactNumber,
+    required this.personName,
+    required this.productName,
+  });
 
   @override
   State<CallButton> createState() => _CallButtonState();
@@ -241,6 +252,7 @@ class _CallButtonState extends State<CallButton> {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
+        _showFollowUpDialog();
         setState(() {
           _isCalling = true;
         });
@@ -248,6 +260,7 @@ class _CallButtonState extends State<CallButton> {
         setState(() {
           _isCalling = false;
         });
+        _showFollowUpDialog();
       },
       icon: Icon(
         Icons.call,
@@ -257,19 +270,71 @@ class _CallButtonState extends State<CallButton> {
     );
   }
 
-  Future<void> _makeCall() async {
+  Future<bool> _makeCall() async {
     var status = await Permission.phone.request();
     if (status.isGranted) {
       final DirectCaller directCaller = DirectCaller();
       try {
         await directCaller.makePhoneCall(widget.contactNumber, simSlot: 2);
+        return true;  // Call was successful
       } catch (e) {
         print("Failed to make the call: $e");
+        return false;  // Call failed
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Phone call permission denied')),
       );
+      return false;
     }
+  }
+
+  void _showFollowUpDialog() {
+    TextEditingController _pnameController = TextEditingController();
+    TextEditingController _pronameController = TextEditingController();
+    TextEditingController _numberController = TextEditingController();
+
+    _pnameController.text = widget.personName;
+    _pronameController.text = widget.productName;
+    _numberController.text = widget.contactNumber;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _pnameController,
+                    decoration: InputDecoration(
+                      labelText: 'Person Name',
+                    ),
+                  ),
+                  TextField(
+                    controller: _pronameController,
+                    decoration: InputDecoration(
+                      labelText: 'Product Name',
+                    ),
+                  ),
+                  TextField(
+                    controller: _numberController,
+                    decoration: InputDecoration(
+                      labelText: 'Contact Number',
+                    ),
+                  ),
+                  // Text('Person Name : ${widget.personName}'),
+                  // Text('Product Name : ${widget.productName}'),
+                  // Text('call Number : ${widget.contactNumber}'),
+                  // Add any other fields you need here
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
