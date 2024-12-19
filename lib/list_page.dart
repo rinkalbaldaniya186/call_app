@@ -1,9 +1,9 @@
 import 'package:direct_caller_sim_choice/direct_caller_sim_choice.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Import for date formatting
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'add_page.dart';
-import 'models/contactList class.dart';  // Import the AddPage where contacts can be added
+import 'models/contactList class.dart';
 
 class ListPage extends StatefulWidget {
   final List<contactList> contactListData;
@@ -15,19 +15,17 @@ class ListPage extends StatefulWidget {
 }
 
 class _ListPageState extends State<ListPage> {
-  DateTime? selectedDate; // Store the selected date for filtering
+  DateTime? selectedDate;
 
   @override
   Widget build(BuildContext context) {
-    // Sort contacts by date (most recent first)
     widget.contactListData.sort((a, b) => b.date.compareTo(a.date));
 
-    // Filter contacts if a date is selected
     List<contactList> filteredContacts = selectedDate == null
         ? widget.contactListData
         : widget.contactListData.where((contact) {
-      // Compare the date without time part for filtering
-      return DateFormat('yyyy-MM-dd').format(contact.date) == DateFormat('yyyy-MM-dd').format(selectedDate!);
+      return DateFormat('yyyy-MM-dd').format(contact.date) ==
+          DateFormat('yyyy-MM-dd').format(selectedDate!);
     }).toList();
 
     return Scaffold(
@@ -79,8 +77,8 @@ class _ListPageState extends State<ListPage> {
         itemCount: filteredContacts.length,
         itemBuilder: (context, index) {
           final contact = filteredContacts[index];
-          // Format the date to a readable format
-          final formattedDate = DateFormat('MMM dd, yyyy').format(contact.date);
+          final formattedDate =
+          DateFormat('MMM dd, yyyy').format(contact.date);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Card(
@@ -107,12 +105,12 @@ class _ListPageState extends State<ListPage> {
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     CallButton(
                       contactNumber: contact.contactNumber,
-                      personName: contact.personName,
-                      productName: contact.productName,
+                      onCallEnded: () {
+                        _showEditDialog(contact, index);
+                      },
                     ),
                     IconButton(
                       onPressed: () {
@@ -122,6 +120,12 @@ class _ListPageState extends State<ListPage> {
                         Icons.delete,
                         color: Colors.red,
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.orange),
+                      onPressed: () {
+                        _showEditDialog(contact, index);
+                      },
                     ),
                   ],
                 ),
@@ -161,7 +165,6 @@ class _ListPageState extends State<ListPage> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    // Display the formatted date of contact
                     Text(
                       "Added on: $formattedDate",
                       style: const TextStyle(
@@ -195,7 +198,6 @@ class _ListPageState extends State<ListPage> {
     );
   }
 
-  /// Delete contact from the list and update UI
   void _deleteContact(int index) {
     showDialog(
       context: context,
@@ -206,7 +208,7 @@ class _ListPageState extends State<ListPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
+                Navigator.of(context).pop();
               },
               child: const Text("Cancel"),
             ),
@@ -215,7 +217,7 @@ class _ListPageState extends State<ListPage> {
                 setState(() {
                   widget.contactListData.removeAt(index);
                 });
-                Navigator.of(context).pop(); // Dismiss dialog
+                Navigator.of(context).pop();
               },
               child: const Text(
                 "Delete",
@@ -227,18 +229,101 @@ class _ListPageState extends State<ListPage> {
       },
     );
   }
+
+  void _showEditDialog(contactList contact, int index) {
+    final TextEditingController _personNameController =
+    TextEditingController(text: contact.personName);
+    final TextEditingController _productNameController =
+    TextEditingController(text: contact.productName);
+    final TextEditingController _contactNumberController =
+    TextEditingController(text: contact.contactNumber);
+    final TextEditingController _descriptionController =
+    TextEditingController(text: contact.description);
+    final TextEditingController _callDescController =
+    TextEditingController(text: contact.callDesc);
+    final TextEditingController _durationController =
+    TextEditingController(text: contact.duration);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Edit Contact"),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _personNameController,
+                  decoration: const InputDecoration(labelText: "Person Name"),
+                ),
+                TextField(
+                  controller: _contactNumberController,
+                  decoration: const InputDecoration(labelText: "Contact Number"),
+                  keyboardType: TextInputType.phone,
+                ),
+                TextField(
+                  controller: _productNameController,
+                  decoration: const InputDecoration(labelText: "Product Name"),
+                ),
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(labelText: "Description"),
+                ),
+                TextField(
+                  controller: _callDescController,
+                  decoration:
+                  const InputDecoration(labelText: "Call Description"),
+                ),
+                TextField(
+                  controller: _durationController,
+                  decoration: const InputDecoration(labelText: "Duration"),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  widget.contactListData[index] = contactList.CallCut(
+                    _personNameController.text.trim(),
+                    _productNameController.text.trim(),
+                    _descriptionController.text.trim(),
+                    _contactNumberController.text.trim(),
+                    contact.date,
+                    _callDescController.text.trim(),
+                    _durationController.text.trim(),
+                  );
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Contact updated successfully!')),
+                );
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class CallButton extends StatefulWidget {
   final String contactNumber;
-  final String personName;
-  final String productName;
+  final Function onCallEnded;
 
   const CallButton({
     super.key,
     required this.contactNumber,
-    required this.personName,
-    required this.productName,
+    required this.onCallEnded,
   });
 
   @override
@@ -252,7 +337,6 @@ class _CallButtonState extends State<CallButton> {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
-        _showFollowUpDialog();
         setState(() {
           _isCalling = true;
         });
@@ -260,7 +344,7 @@ class _CallButtonState extends State<CallButton> {
         setState(() {
           _isCalling = false;
         });
-        _showFollowUpDialog();
+        widget.onCallEnded();
       },
       icon: Icon(
         Icons.call,
@@ -276,10 +360,10 @@ class _CallButtonState extends State<CallButton> {
       final DirectCaller directCaller = DirectCaller();
       try {
         await directCaller.makePhoneCall(widget.contactNumber, simSlot: 2);
-        return true;  // Call was successful
+        return true;
       } catch (e) {
         print("Failed to make the call: $e");
-        return false;  // Call failed
+        return false;
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -287,54 +371,5 @@ class _CallButtonState extends State<CallButton> {
       );
       return false;
     }
-  }
-
-  void _showFollowUpDialog() {
-    TextEditingController _pnameController = TextEditingController();
-    TextEditingController _pronameController = TextEditingController();
-    TextEditingController _numberController = TextEditingController();
-
-    _pnameController.text = widget.personName;
-    _pronameController.text = widget.productName;
-    _numberController.text = widget.contactNumber;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return SimpleDialog(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _pnameController,
-                    decoration: InputDecoration(
-                      labelText: 'Person Name',
-                    ),
-                  ),
-                  TextField(
-                    controller: _pronameController,
-                    decoration: InputDecoration(
-                      labelText: 'Product Name',
-                    ),
-                  ),
-                  TextField(
-                    controller: _numberController,
-                    decoration: InputDecoration(
-                      labelText: 'Contact Number',
-                    ),
-                  ),
-                  // Text('Person Name : ${widget.personName}'),
-                  // Text('Product Name : ${widget.productName}'),
-                  // Text('call Number : ${widget.contactNumber}'),
-                  // Add any other fields you need here
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
