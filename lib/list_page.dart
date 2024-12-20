@@ -1,3 +1,4 @@
+import 'package:call_app/call_history_page.dart';
 import 'package:direct_caller_sim_choice/direct_caller_sim_choice.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -42,6 +43,7 @@ class _ListPageState extends State<ListPage> {
         centerTitle: true,
         elevation: 5,
         actions: [
+          // Existing date picker button
           IconButton(
             icon: const Icon(Icons.date_range, color: Colors.white),
             onPressed: () async {
@@ -59,8 +61,21 @@ class _ListPageState extends State<ListPage> {
               }
             },
           ),
+          // Add the Next button to navigate to CallHistoryPage
+          IconButton(
+            icon: const Icon(Icons.arrow_forward, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CallHistoryPage(widget.contactListData),
+                ),
+              );
+            },
+          ),
         ],
       ),
+
       body: filteredContacts.isEmpty
           ? const Center(
         child: Text(
@@ -121,12 +136,12 @@ class _ListPageState extends State<ListPage> {
                         color: Colors.red,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.orange),
-                      onPressed: () {
-                        _showEditDialog(contact, index);
-                      },
-                    ),
+                    // IconButton(
+                    //   icon: const Icon(Icons.edit, color: Colors.orange),
+                    //   onPressed: () {
+                    //     _showEditDialog(contact, index);
+                    //   },
+                    // ),
                   ],
                 ),
                 title: Text(
@@ -164,14 +179,14 @@ class _ListPageState extends State<ListPage> {
                         color: Colors.black54,
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "Added on: $formattedDate",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black45,
-                      ),
-                    ),
+                    // const SizedBox(height: 5),
+                    // Text(
+                    //   "Added on: $formattedDate",
+                    //   style: const TextStyle(
+                    //     fontSize: 12,
+                    //     color: Colors.black45,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -302,10 +317,12 @@ class _ListPageState extends State<ListPage> {
                     _durationController.text.trim(),
                   );
                 });
-                Navigator.pop(context);
+                var EditContactList = widget.contactListData[index];
+                Navigator.push(context, MaterialPageRoute(builder: (context) => CallHistoryPage(widget.contactListData),));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Contact updated successfully!')),
                 );
+                Navigator.pop(context);
               },
               child: const Text("Save"),
             ),
